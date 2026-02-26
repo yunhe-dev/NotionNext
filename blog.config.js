@@ -75,6 +75,12 @@ const BLOG = {
     process.env.NEXT_PUBLIC_TECH_GROW_KEYWORD ||
     process.env.TECH_GROW_KEYWORD ||
     '',
+  TECH_GROW_ARTICLE_CONTENT_ID:
+    process.env.NEXT_PUBLIC_TECH_GROW_ARTICLE_CONTENT_ID ||
+    process.env.TECH_GROW_ARTICLE_CONTENT_ID ||
+    process.env.NEXT_PUBLIC_TECH_GROW_CONTENT_ID ||
+    process.env.TECH_GROW_CONTENT_ID ||
+    '',
   TECH_GROW_BTN_TEXT:
     process.env.NEXT_PUBLIC_TECH_GROW_BTN_TEXT ||
     process.env.TECH_GROW_BTN_TEXT ||
@@ -99,6 +105,14 @@ const BLOG = {
     process.env.NEXT_PUBLIC_TECH_GROW_CSS_URL ||
     process.env.TECH_GROW_CSS_URL ||
     'https://qiniu.techgrow.cn/readmore/dist/hexo.css',
+  TECH_GROW_DEBUG:
+    process.env.NEXT_PUBLIC_TECH_GROW_DEBUG ||
+    process.env.TECH_GROW_DEBUG ||
+    true,
+  TECH_GROW_ALLOW_MOBILE:
+    process.env.NEXT_PUBLIC_TECH_GROW_ALLOW_MOBILE ||
+    process.env.TECH_GROW_ALLOW_MOBILE ||
+    false,
   TECH_GROW_CAPTCHA_URL:
     process.env.NEXT_PUBLIC_TECH_GROW_CAPTCHA_URL ||
     process.env.TECH_GROW_CAPTCHA_URL ||

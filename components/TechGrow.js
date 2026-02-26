@@ -50,7 +50,10 @@ const TechGrow = () => {
   const qrcode = getFirstConfig(['TECH_GROW_QRCODE'], '请配置公众号二维码')
   const blogId = getFirstConfig(['TECH_GROW_BLOG_ID'])
   const name = getFirstConfig(['TECH_GROW_NAME'], '请配置公众号名')
-  const id = getFirstConfig(['TECH_GROW_CONTENT_ID'], 'notion-article')
+  const id = getFirstConfig(
+    ['TECH_GROW_ARTICLE_CONTENT_ID', 'TECH_GROW_CONTENT_ID'],
+    'notion-article'
+  )
   const keyword = getFirstConfig(['TECH_GROW_KEYWORD'], '请配置公众号关键词')
   const btnText = getFirstConfig(['TECH_GROW_BTN_TEXT'], '原创不易，完成人机检测，阅读全文')
   // 验证一次后的有效时长，单位小时
@@ -60,7 +63,9 @@ const TechGrow = () => {
   const expires = getFirstConfig(['TECH_GROW_EXPIRES'], 365)
   const lockToc = getFirstConfig(['TECH_GROW_LOCK_TOC'], 'yes')
   const height = getFirstConfig(['TECH_GROW_HEIGHT'], 'auto')
-  const tocSelector = getFirstConfig(['TECH_GROW_TOC_SELECTOR'], 'a.catalog-item')
+  const tocSelector = getFirstConfig(['TECH_GROW_TOC_SELECTOR'], '')
+  const debug = getFirstConfig(['TECH_GROW_DEBUG'], true)
+  const allowMobile = getFirstConfig(['TECH_GROW_ALLOW_MOBILE'], false)
   // 白名单，想要放行的页面
   const whiteList = getFirstConfig(['TECH_GROW_WHITE_LIST'], '')
   // 黄名单，优先级最高，设置后只有这里的路径会被上锁，其他页面自动全部放行
@@ -98,9 +103,20 @@ const TechGrow = () => {
 
   const loadReadmore = async () => {
     try {
+      const isMobile = /phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone/i.test(
+        navigator.userAgent
+      )
+      if (isMobile && !allowMobile) {
+        if (debug) {
+          console.log('Readmore: 移动端已禁用')
+        }
+        return
+      }
       const isReady = await waitForContentReady()
       if (!isReady) {
-        console.warn(`Readmore 未找到内容容器: #${id}`)
+        if (debug) {
+          console.warn(`Readmore 未找到内容容器: #${id}`)
+        }
         return
       }
       if (cssUrl) {
@@ -126,6 +142,7 @@ const TechGrow = () => {
           lockToc,
           height,
           tocSelector,
+          debug,
           execute: 'yes',
           type: 'hexo',
           baseUrl,
@@ -151,10 +168,14 @@ const TechGrow = () => {
         // Return cleanup function to clear the interval if the component unmounts
         return () => clearInterval(intervalId)
       } else {
-        console.warn(`Readmore 插件加载成功但构造器不存在: ${jsUrl}`)
+        if (debug) {
+          console.warn(`Readmore 插件加载成功但构造器不存在: ${jsUrl}`)
+        }
       }
     } catch (error) {
-      console.error('Readmore 加载异常', error)
+      if (debug) {
+        console.error('Readmore 加载异常', error)
+      }
     }
   }
 
@@ -187,7 +208,7 @@ const TechGrow = () => {
     }
 
     if (isBrowser && blogId && !isSignedIn) {
-      toggleTocItems(true) // 禁止目录项的点击
+      toggleTocItems(true, tocSelector) // 禁止目录项的点击
 
       // 检查是否已加载
       const readMoreWrap = document.getElementById('read-more-wrap')
@@ -195,7 +216,7 @@ const TechGrow = () => {
         loadReadmore()
       }
     }
-  }, [isLoaded, router, id])
+  }, [isLoaded, router, id, tocSelector])
 
   // 启动一个监听器，当页面上存在#read-more-wrap对象时，所有的 a .catalog-item 对象都禁止点击
 
@@ -203,8 +224,8 @@ const TechGrow = () => {
 }
 
 // 定义禁用和恢复目录项点击的函数
-const toggleTocItems = disable => {
-  const tocItems = document.querySelectorAll('a.catalog-item')
+const toggleTocItems = (disable, selector = '') => {
+  const tocItems = document.querySelectorAll(selector || 'a.catalog-item')
   tocItems.forEach(item => {
     if (disable) {
       item.style.pointerEvents = 'none'
