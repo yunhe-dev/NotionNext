@@ -46,14 +46,6 @@ const getReadmoreWrapper = () =>
   document.getElementById('readmore-wrapper') ||
   document.getElementById('read-more-wrap')
 
-const isReadmoreWrapperInactive = wrapper => {
-  if (!wrapper) {
-    return true
-  }
-  const style = window.getComputedStyle(wrapper)
-  return style.display === 'none' || style.visibility === 'hidden'
-}
-
 const normalizePreviewHeight = height => {
   if (height === undefined || height === null || height === '') {
     return null
@@ -155,12 +147,6 @@ const TechGrow = () => {
           // TechGrow 的 #readmore-wrapper 使用 absolute 定位，父容器需为 relative
           target.style.position = 'relative'
         }
-        const previewHeight = normalizePreviewHeight(height)
-        if (previewHeight) {
-          // NotionNext 兜底：明确正文预览高度，防止按钮跑到页面末尾
-          target.style.height = previewHeight
-          target.style.overflow = 'hidden'
-        }
       }
       if (cssUrl) {
         await loadExternalResource(cssUrl, 'css')
@@ -211,6 +197,12 @@ const TechGrow = () => {
           wrapper.style.bottom = '0'
           wrapper.style.width = '100%'
           wrapper.style.zIndex = '9999'
+          const previewHeight = normalizePreviewHeight(height)
+          if (previewHeight) {
+            // 只有在 readmore wrapper 已生成时才裁剪正文，避免误解锁
+            container.style.height = previewHeight
+            container.style.overflow = 'hidden'
+          }
           return true
         }
 
@@ -221,26 +213,7 @@ const TechGrow = () => {
           }, delay)
         })
 
-        // btw初始化后，开始监听read-more-wrap何时消失
-        const intervalId = setInterval(() => {
-          const readMoreWrapElement = getReadmoreWrapper()
-          const articleWrapElement = document.getElementById(id)
-
-          if (
-            isReadmoreWrapperInactive(readMoreWrapElement) &&
-            articleWrapElement
-          ) {
-            toggleTocItems(false, tocSelector) // 恢复目录项的点击
-            // 自动调整文章区域的高度
-            articleWrapElement.style.height = 'auto'
-            articleWrapElement.style.overflow = 'visible'
-            // 停止定时器
-            clearInterval(intervalId)
-          }
-        }, 1000) // 每秒检查一次
-
-        // Return cleanup function to clear the interval if the component unmounts
-        return () => clearInterval(intervalId)
+        return undefined
       } else {
         if (debug) {
           console.warn(`Readmore 插件加载成功但构造器不存在: ${jsUrl}`)
@@ -282,40 +255,15 @@ const TechGrow = () => {
     }
 
     if (isBrowser && blogId && !isSignedIn) {
-      toggleTocItems(true, tocSelector) // 禁止目录项的点击
-
       // 检查是否已加载
       const readMoreWrap = getReadmoreWrapper()
       if (!readMoreWrap) {
         loadReadmore()
-      } else if (isReadmoreWrapperInactive(readMoreWrap)) {
-        toggleTocItems(false, tocSelector)
-        const articleWrapElement = document.getElementById(id)
-        if (articleWrapElement) {
-          articleWrapElement.style.height = 'auto'
-          articleWrapElement.style.overflow = 'visible'
-        }
       }
     }
   }, [isLoaded, router, id, tocSelector])
 
-  // 启动一个监听器，当页面上存在#read-more-wrap对象时，所有的 a .catalog-item 对象都禁止点击
-
   return <></>
-}
-
-// 定义禁用和恢复目录项点击的函数
-const toggleTocItems = (disable, selector = '') => {
-  const tocItems = document.querySelectorAll(selector || 'a.catalog-item')
-  tocItems.forEach(item => {
-    if (disable) {
-      item.style.pointerEvents = 'none'
-      item.style.opacity = '0.5'
-    } else {
-      item.style.pointerEvents = 'auto'
-      item.style.opacity = '1'
-    }
-  })
 }
 
 /**
